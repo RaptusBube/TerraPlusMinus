@@ -88,6 +88,21 @@ public final class ConfigurationHelper {
         }
     }
 
+    public static LinkedWorld getWorld(boolean isNextServer, double height){
+        int offset = Terraplusminus.config.getInt("terrain_offset.y");
+        height = height - offset;
+        if(isNextServer){
+            for(LinkedWorld world : worlds){
+                if(offset > world.getOffset() && Math.abs(world.getOffset() - 2033) >= height) return world;
+            }
+        }else{
+            for(LinkedWorld world : worlds){
+                if(offset < world.getOffset() && height >= world.getOffset()) return world;
+            }
+        }
+        return null;
+    }
+
     public static List<LinkedWorld> getWorlds() {
         return worlds;
     }

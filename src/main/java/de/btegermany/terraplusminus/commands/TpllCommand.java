@@ -4,6 +4,7 @@ import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import de.btegermany.terraplusminus.Terraplusminus;
 import de.btegermany.terraplusminus.data.TerraConnector;
+import de.btegermany.terraplusminus.events.PlayerJoinEvent;
 import de.btegermany.terraplusminus.gen.RealWorldGenerator;
 import de.btegermany.terraplusminus.utils.ConfigurationHelper;
 import de.btegermany.terraplusminus.utils.LinkedWorld;
@@ -143,6 +144,8 @@ public class TpllCommand implements CommandExecutor {
             double[] mcCoordinates;
             try {
                 mcCoordinates = projection.fromGeo(coordinates[0], coordinates[1]);
+
+
             } catch (OutOfProjectionBoundsException e) {
                 commandSender.sendMessage(RED + "Location is not within projection bounds");
                 return true;
@@ -167,7 +170,9 @@ public class TpllCommand implements CommandExecutor {
                 if (Terraplusminus.config.getBoolean("linked_worlds.enabled")) {
                     if (Terraplusminus.config.getString("linked_worlds.method").equalsIgnoreCase("SERVER")) {
                         //send player uuid and coordinates to bungee
-                        return sendPluginMessageToBungeeBridge(true, player, coordinates);
+                        if(sendPluginMessageToBungeeBridge(true, player, coordinates, height)){
+                            return true;
+                        }
                     } else if (Terraplusminus.config.getString("linked_worlds.method").equalsIgnoreCase("MULTIVERSE")) {
                         LinkedWorld nextServer = ConfigurationHelper.getNextServerName(player.getWorld().getName());
                         if (nextServer == null) {
@@ -189,7 +194,9 @@ public class TpllCommand implements CommandExecutor {
                 if (Terraplusminus.config.getBoolean("linked_worlds.enabled")) {
                     if (Terraplusminus.config.getString("linked_worlds.method").equalsIgnoreCase("SERVER")) {
                         //send player uuid and coordinates to bungee
-                        return sendPluginMessageToBungeeBridge(false, player, coordinates);
+                        if(sendPluginMessageToBungeeBridge(true, player, coordinates, height)){
+                            return true;
+                        }
                     } else if (Terraplusminus.config.getString("linked_worlds.method").equalsIgnoreCase("MULTIVERSE")) {
                         LinkedWorld previousServer = ConfigurationHelper.getPreviousServerName(player.getWorld().getName());
                         if (previousServer == null) {
@@ -233,24 +240,31 @@ public class TpllCommand implements CommandExecutor {
         return true;
     }
 
-    private static boolean sendPluginMessageToBungeeBridge(boolean isNextServer, Player player, double[] coordinates) {
+    private static boolean
+    sendPluginMessageToBungeeBridge(boolean isNextServer, Player player, double[] coordinates, double height) {
+        if(PlayerJoinEvent.hashMap.get(player.getName())+5000 > System.currentTimeMillis()) return false;
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF(player.getUniqueId().toString());
         LinkedWorld server;
-        if (isNextServer) {
+        //isNextServer == true -> higher
+
+        /*if (isNextServer) {
             server = ConfigurationHelper.getNextServerName(Bukkit.getServer().getName()); //TODO: Bukkit.getServer().getName() does not return the real name
         } else {
             server = ConfigurationHelper.getPreviousServerName(Bukkit.getServer().getName()); //TODO: Bukkit.getServer().getName() does not return the real name
-        }
+        }*/
+
+        server = ConfigurationHelper.getWorld(isNextServer, height);
+
 
         if (server != null) {
-            out.writeUTF(server.getWorldName() + ", " + server.getOffset());
+            out.writeUTF(server.getWorldName() + "," + server.getOffset());
         } else {
             player.sendMessage(Terraplusminus.config.getString("prefix") + "§cPlease contact server administrator. Your config is not set up correctly.");
             return true;
         }
         out.writeUTF(coordinates[1] + ", " + coordinates[0]);
-        player.sendPluginMessage(Terraplusminus.instance, "bungeecord:terraplusminus", out.toByteArray());
+        player.sendPluginMessage(Terraplusminus.instance, "terraplusminus:teleportbridge", out.toByteArray());
 
         player.sendMessage(Terraplusminus.config.getString("prefix") + "§cSending to another server...");
         return true;

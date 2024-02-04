@@ -65,8 +65,10 @@ public final class Terraplusminus extends JavaPlugin implements Listener {
 
         // Register plugin messaging channel
         PlayerHashMapManagement playerHashMapManagement = new PlayerHashMapManagement();
-        this.getServer().getMessenger().registerOutgoingPluginChannel(this, "bungeecord:terraplusminus");
-        this.getServer().getMessenger().registerIncomingPluginChannel(this, "bungeecord:terraplusminus", new PluginMessageEvent(playerHashMapManagement));
+        this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+        this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", new PluginMessageEvent(playerHashMapManagement));
+        this.getServer().getMessenger().registerOutgoingPluginChannel(this, "terraplusminus:teleportbridge");
+        this.getServer().getMessenger().registerIncomingPluginChannel(this, "terraplusminus:teleportbridge", new PluginMessageEvent(playerHashMapManagement));
         // --------------------------
 
         // Registering events

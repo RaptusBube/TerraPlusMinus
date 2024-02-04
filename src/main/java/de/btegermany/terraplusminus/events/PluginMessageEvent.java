@@ -21,7 +21,7 @@ public class PluginMessageEvent implements PluginMessageListener {
 
     @Override
     public void onPluginMessageReceived(@NotNull String channel, @NotNull Player player, @NotNull byte[] message) {
-        if (channel.equals("bungeecord:terraplusminus")) {
+        if (channel.equals("terraplusminus:teleportbridge")) {
             DataInputStream in = new DataInputStream(new ByteArrayInputStream(message));
             try {
                 UUID playerUUID = UUID.fromString(in.readUTF());

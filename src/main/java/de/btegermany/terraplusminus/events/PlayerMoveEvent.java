@@ -1,9 +1,15 @@
 package de.btegermany.terraplusminus.events;
 
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 import de.btegermany.terraplusminus.Terraplusminus;
+import de.btegermany.terraplusminus.gen.RealWorldGenerator;
 import de.btegermany.terraplusminus.utils.ConfigurationHelper;
 import de.btegermany.terraplusminus.utils.LinkedWorld;
 import io.papermc.lib.PaperLib;
+import net.buildtheearth.terraminusminus.generator.EarthGeneratorSettings;
+import net.buildtheearth.terraminusminus.projection.GeographicProjection;
+import net.buildtheearth.terraminusminus.projection.OutOfProjectionBoundsException;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -13,6 +19,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -23,9 +30,14 @@ import java.util.logging.Level;
 
 import static java.lang.String.valueOf;
 import static org.bukkit.ChatColor.BOLD;
+import static org.bukkit.ChatColor.RED;
 
 
 public class PlayerMoveEvent implements Listener {
+
+    private final EarthGeneratorSettings bteGeneratorSettings = EarthGeneratorSettings.parse(EarthGeneratorSettings.BTE_DEFAULT_SETTINGS);
+
+    private HashMap<String, Long> teleportCooldown = new HashMap<>();
 
     private BukkitRunnable runnable;
     private ArrayList<Integer> taskIDs = new ArrayList<>();
@@ -89,7 +101,7 @@ public class PlayerMoveEvent implements Listener {
 
     @EventHandler
     void onPlayerFall(org.bukkit.event.player.PlayerMoveEvent event) {
-        if (!this.linkedWorldsEnabled && !this.linkedWorldsMethod.equalsIgnoreCase("MULTIVERSE")) {
+        if (!this.linkedWorldsEnabled) {
             return;
         }
 
@@ -97,25 +109,84 @@ public class PlayerMoveEvent implements Listener {
         World world = p.getWorld();
         Location location = p.getLocation();
 
-        // Verzögerte Teleportation
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                // Teleport player from world to world
-                if (p.getLocation().getY() < 0) {
-                    LinkedWorld previousServer = ConfigurationHelper.getPreviousServerName(world.getName());
-                    if (previousServer != null) {
-                        teleportPlayer(previousServer, location, p);
-                    }
-                } else if (p.getLocation().getY() > world.getMaxHeight()) {
-                    LinkedWorld nextServer = ConfigurationHelper.getNextServerName(world.getName());
-                    if (nextServer != null) {
-                        teleportPlayer(nextServer, location, p);
+
+        if(this.linkedWorldsMethod.equalsIgnoreCase("MULTIVERSE")){
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    // Teleport player from world to world
+                    if (p.getLocation().getY() < -64.3) {
+                        LinkedWorld previousServer = ConfigurationHelper.getPreviousServerName(world.getName());
+                        if (previousServer != null) {
+                            teleportPlayer(previousServer, location, p);
+                        }
+                    } else if (p.getLocation().getY() > world.getMaxHeight()) {
+                        LinkedWorld nextServer = ConfigurationHelper.getNextServerName(world.getName());
+                        if (nextServer != null) {
+                            teleportPlayer(nextServer, location, p);
+                        }
                     }
                 }
+            }.runTaskLater(plugin, 60L);
+        }else if(this.linkedWorldsMethod.equalsIgnoreCase("SERVER") && !p.hasPermission("t+-.noselfteleport")){
+
+
+
+            LinkedWorld server = null;
+
+            int yOffset = 0;
+            if (p.getLocation().getY() < -64.3) {
+                yOffset = 1;
+                server = ConfigurationHelper.getWorld(false, p.getLocation().getY());
+            } else if (p.getLocation().getY() > world.getMaxHeight()) {
+                server = ConfigurationHelper.getWorld(true, p.getLocation().getY());
+                yOffset = -1;
             }
-        }.runTaskLater(plugin, 60L);
+
+            if (server == null) return;
+
+            if(teleportCooldown.containsKey(p.getName())){
+                if(teleportCooldown.get(p.getName())+3000 > System.currentTimeMillis()){
+                    return;
+                }
+            }
+
+            if(PlayerJoinEvent.hashMap.get(p.getName())+5000 > System.currentTimeMillis()) return;
+
+
+            //p.teleport(p.getLocation().add(0, yOffset, 0));
+            Location now = p.getLocation();
+            Location then = event.getFrom();
+            double diffX = (then.getX()-now.getX())*1000;
+            double diffY = (then.getY()-now.getY())*1000;
+            double diffZ = (then.getZ()-now.getZ())*1000;
+            p.teleport(new Location(p.getLocation().getWorld(), event.getFrom().getX()-diffX, event.getFrom().getY()+yOffset-diffY,event.getFrom().getZ()-diffZ));
+            teleportCooldown.put(p.getName(), System.currentTimeMillis());
+            ByteArrayDataOutput out = ByteStreams.newDataOutput();
+            out.writeUTF(p.getUniqueId().toString());
+            out.writeUTF(server.getWorldName() + "," + server.getOffset());
+            double[] mcCoordinates = new double[2];
+            mcCoordinates[0] = p.getLocation().getX() - xOffset;
+            mcCoordinates[1] = p.getLocation().getZ() - zOffset;
+            double[] coordinates;
+            try {
+                coordinates = bteGeneratorSettings.projection().toGeo(mcCoordinates[0], mcCoordinates[1]);
+            } catch (OutOfProjectionBoundsException e) {
+                p.sendMessage(RED + "Location is not within projection bounds");
+                return;
+            }
+
+            out.writeUTF(coordinates[1] + ", " + coordinates[0]);
+            p.sendPluginMessage(Terraplusminus.instance, "terraplusminus:teleportbridge", out.toByteArray());
+
+            p.sendMessage(Terraplusminus.config.getString("prefix") + "§cSending to another server...");
+
+        }
+
+        // Verzögerte Teleportation
+
     }
+
 
     private void teleportPlayer(LinkedWorld linkedWorld, Location location, Player p) {
         World tpWorld = Bukkit.getWorld(linkedWorld.getWorldName());
