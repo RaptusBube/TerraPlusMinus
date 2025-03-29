@@ -1,7 +1,6 @@
 package de.btegermany.terraplusminus;
 
 
-import com.mojang.brigadier.Command;
 import de.btegermany.terraplusminus.commands.OffsetCommand;
 import de.btegermany.terraplusminus.commands.TpllCommand;
 import de.btegermany.terraplusminus.commands.WhereCommand;
@@ -18,7 +17,6 @@ import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.buildtheearth.terraminusminus.TerraConfig;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
