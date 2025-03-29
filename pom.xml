@@ -6,14 +6,14 @@
 
     <groupId>de.btegermany</groupId>
     <artifactId>terraplusminus</artifactId>
-    <version>1.4.0</version>
+    <version>1.4.1</version>
     <packaging>jar</packaging>
 
     <name>Terraplusminus</name>
 
     <description>A plugin which implements the terra-- api in a papermc plugin</description>
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <url>https://bte-germany.de</url>
@@ -109,9 +109,9 @@
             <version>2.8.9</version>
         </dependency>
         <dependency>
-            <groupId>com.github.SmylerMC</groupId>
+            <groupId>com.github.BTEUK</groupId>
             <artifactId>terraminusminus</artifactId>
-            <version>c6d983e221</version>
+            <version>feature~paper_1_21-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
