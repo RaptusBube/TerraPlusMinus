@@ -13,7 +13,7 @@
 
     <description>A plugin which implements the terra-- api in a papermc plugin</description>
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>20</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <url>https://bte-germany.de</url>
@@ -25,8 +25,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <source>20</source>
+                    <target>20</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -85,7 +85,7 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.21.4-R0.1-SNAPSHOT</version>
+            <version>1.21-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -107,11 +107,6 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.8.9</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.SmylerMC</groupId>
-            <artifactId>terraminusminus</artifactId>
-            <version>c6d983e221</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
